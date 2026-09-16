@@ -343,7 +343,7 @@ app.get('/api/system', async (req, res) => {
   } catch {}
 
   try {
-    await execPromise('wt -v', { timeout: 3000 });
+    await execPromise('where wt', { timeout: 3000 });
     terminalAvailable = true;
   } catch {}
 
