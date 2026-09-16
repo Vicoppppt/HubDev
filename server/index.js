@@ -996,7 +996,7 @@ app.post('/api/projects/:name/actions/launch-quiz', (req, res) => {
       return res.status(404).json({ error: 'run_quiz.py introuvable dans ce projet' });
     }
 
-    spawn('cmd.exe', ['/c', 'start', 'QCM Python Scripting', 'cmd.exe', '/k', `cd /d "${projectPath}" && python run_quiz.py`], {
+    spawn('powershell.exe', ['-Command', `Start-Process powershell.exe -ArgumentList '-NoExit', '-Command', 'Set-Location \\"${projectPath}\\"; python run_quiz.py'`], {
       detached: true,
       stdio: 'ignore',
     }).unref();
@@ -1014,9 +1014,9 @@ app.post('/api/projects/:name/actions/launch-jupyter', (req, res) => {
     const localVenvPy = path.join(projectPath, '.venv', 'Scripts', 'python.exe');
 
     let pyExec = existsSync(localVenvPy) ? localVenvPy : (existsSync(sharedVenvPy) ? sharedVenvPy : 'python');
-    const jupyterCmd = `"${pyExec}" -m jupyterlab --ServerApp.token="" --ServerApp.password="" --ServerApp.disable_check_xsrf=True`;
+    const jupyterArgs = `-m jupyterlab --ServerApp.token=\\"\\" --ServerApp.password=\\"\\" --ServerApp.disable_check_xsrf=True`;
 
-    spawn('cmd.exe', ['/c', 'start', 'JupyterLab', 'cmd.exe', '/k', `cd /d "${projectPath}" && ${jupyterCmd}`], {
+    spawn('powershell.exe', ['-Command', `Start-Process powershell.exe -ArgumentList '-NoExit', '-Command', 'Set-Location \\"${projectPath}\\"; & \\"${pyExec}\\" ${jupyterArgs}'`], {
       detached: true,
       stdio: 'ignore',
     }).unref();
