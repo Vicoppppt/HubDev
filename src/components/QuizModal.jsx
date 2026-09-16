@@ -27,10 +27,38 @@ export default function QuizModal({ isOpen, onClose, projectName }) {
       .finally(() => setLoading(false));
   }, [isOpen, projectName]);
 
+  const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
   const startLesson = (lesson) => {
     setSelectedLesson(lesson);
-    const shuffled = [...(lesson.questions || [])].sort(() => 0.5 - Math.random());
-    setQuestions(shuffled.slice(0, 15));
+    // Shuffle and randomize questions
+    const rawQuestions = [...(lesson.questions || [])].sort(() => 0.5 - Math.random());
+    
+    // For each question, shuffle its options and recalculate the answer indices (Fisher-Yates)
+    const preparedQuestions = rawQuestions.slice(0, 20).map((q) => {
+      const originalOptions = q.options || [];
+      const originalAnswers = Array.isArray(q.answer) ? q.answer : [q.answer];
+      
+      // Create indexed array to shuffle
+      const indices = originalOptions.map((_, i) => i);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+
+      // Reordered options
+      const newOptions = indices.map(i => originalOptions[i]);
+      // New correct answer indices
+      const newAnswers = originalAnswers.map(oldIdx => indices.indexOf(oldIdx));
+
+      return {
+        ...q,
+        options: newOptions,
+        answer: Array.isArray(q.answer) ? newAnswers : newAnswers[0],
+      };
+    });
+
+    setQuestions(preparedQuestions);
     setCurrentIndex(0);
     setSelectedAnswers([]);
     setHasSubmitted(false);
@@ -146,7 +174,7 @@ export default function QuizModal({ isOpen, onClose, projectName }) {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 text-white font-semibold text-xs transition"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>Recommencer avec 15 nouvelles questions</span>
+                  <span>Recommencer avec 20 nouvelles questions mélangées</span>
                 </button>
               </div>
             </div>
@@ -181,13 +209,17 @@ export default function QuizModal({ isOpen, onClose, projectName }) {
                   const isCorrect = correctAnswers.includes(idx);
 
                   let borderStyle = 'border-slate-800 hover:border-slate-700 bg-slate-900/40 text-slate-200';
+                  let badgeStyle = 'bg-slate-800 text-slate-400 border-slate-700';
                   if (isSelected && !hasSubmitted) {
                     borderStyle = 'border-pink-500/80 bg-pink-950/20 text-white';
+                    badgeStyle = 'bg-pink-500 text-white border-pink-400';
                   } else if (hasSubmitted) {
                     if (isCorrect) {
                       borderStyle = 'border-emerald-500 bg-emerald-950/20 text-emerald-300';
+                      badgeStyle = 'bg-emerald-500 text-slate-950 font-bold border-emerald-400';
                     } else if (isSelected && !isCorrect) {
                       borderStyle = 'border-rose-500 bg-rose-950/20 text-rose-300';
+                      badgeStyle = 'bg-rose-500 text-white border-rose-400';
                     } else {
                       borderStyle = 'border-slate-800/60 opacity-60 text-slate-400';
                     }
@@ -200,7 +232,12 @@ export default function QuizModal({ isOpen, onClose, projectName }) {
                       disabled={hasSubmitted}
                       className={`w-full text-left p-3.5 rounded-xl border transition flex items-center justify-between gap-3 text-xs ${borderStyle}`}
                     >
-                      <span className="leading-relaxed">{opt}</span>
+                      <div className="flex items-center gap-3">
+                        <span className={`w-6 h-6 rounded-lg border flex items-center justify-center font-bold text-[11px] shrink-0 ${badgeStyle}`}>
+                          {LETTERS[idx] || (idx + 1)}
+                        </span>
+                        <span className="leading-relaxed">{opt}</span>
+                      </div>
                       {hasSubmitted && isCorrect && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
                       {hasSubmitted && isSelected && !isCorrect && <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
                     </button>
