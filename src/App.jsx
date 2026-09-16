@@ -26,6 +26,7 @@ import SystemInfoModal from './components/SystemInfoModal';
 import LogsModal from './components/LogsModal';
 import GitModal from './components/GitModal';
 import GitActionLogModal from './components/GitActionLogModal';
+import QuizModal from './components/QuizModal';
 
 export default function App() {
   const [projects, setProjects] = useState([]);
@@ -49,6 +50,10 @@ export default function App() {
   // Git modal
   const [isGitOpen, setIsGitOpen] = useState(false);
   const [activeProjectForGit, setActiveProjectForGit] = useState(null);
+
+  // Quiz modal
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [activeProjectForQuiz, setActiveProjectForQuiz] = useState(null);
 
   // Git Action Log Modal (for 1-click push and pull logs pop-up)
   const [gitLogModal, setGitLogModal] = useState({
@@ -310,6 +315,11 @@ export default function App() {
 
   // Launch action (code, terminal, explorer)
   const handleAction = async (name, actionType) => {
+    if (actionType === 'launch-quiz') {
+      setActiveProjectForQuiz(name);
+      setIsQuizOpen(true);
+      return;
+    }
     try {
       const res = await fetch(`/api/projects/${encodeURIComponent(name)}/actions/${actionType}`, {
         method: 'POST',
@@ -644,6 +654,15 @@ export default function App() {
         output={gitLogModal.output}
         branch={gitLogModal.branch}
         githubUrl={gitLogModal.githubUrl}
+      />
+
+      <QuizModal
+        isOpen={isQuizOpen}
+        onClose={() => {
+          setIsQuizOpen(false);
+          setActiveProjectForQuiz(null);
+        }}
+        projectName={activeProjectForQuiz}
       />
 
       <SystemInfoModal

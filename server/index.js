@@ -22,6 +22,20 @@ const CURRENT_APP_FOLDER = path.basename(path.resolve(__dirname, '..'));
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Terminal Request Logger for live monitoring and easy debugging
+app.use((req, res, next) => {
+  const start = Date.now();
+  const time = new Date().toLocaleTimeString('fr-FR');
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const status = res.statusCode;
+    const isError = status >= 400;
+    const icon = isError ? '❌' : (req.method === 'GET' ? '⚡' : '🚀');
+    console.log(`[${time}] ${icon} ${req.method} ${req.originalUrl} - ${status} (${duration}ms)`);
+  });
+  next();
+});
+
 // Global config file for project-hub (stores GitHub Token, preferences)
 const CONFIG_FILE = path.join(__dirname, '..', 'config.json');
 
@@ -1001,6 +1015,40 @@ app.post('/api/projects/:name/actions/launch-quiz', (req, res) => {
       stdio: 'ignore',
     }).unref();
     res.json({ message: 'QCM interactif lancé' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/projects/:name/quiz/data - Get all lessons and quiz questions directly for Web UI
+app.get('/api/projects/:name/quiz/data', async (req, res) => {
+  try {
+    const projectPath = getSafeProjectPath(req.params.name);
+    const lessons = [];
+    const entries = await fs.readdir(projectPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const questionsFile = path.join(projectPath, entry.name, 'questions.json');
+      if (existsSync(questionsFile)) {
+        try {
+          const raw = await fs.readFile(questionsFile, 'utf-8');
+          const data = JSON.parse(raw);
+          lessons.push({
+            id: entry.name,
+            title: data.title || entry.name,
+            lesson: data.lesson || entry.name,
+            totalQuestions: data.questions?.length || 0,
+            questions: data.questions || [],
+          });
+        } catch (err) {
+          console.error(`Erreur lecture questions.json pour ${entry.name}:`, err.message);
+        }
+      }
+    }
+
+    lessons.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+    res.json({ lessons });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
