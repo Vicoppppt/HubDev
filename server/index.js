@@ -1061,10 +1061,8 @@ app.post('/api/projects/:name/actions/launch-jupyter', (req, res) => {
     const sharedVenvPy = 'c:\\Users\\kuchp\\Programmes\\ISEN - 4 - Python Scripting\\.venv\\Scripts\\python.exe';
     const localVenvPy = path.join(projectPath, '.venv', 'Scripts', 'python.exe');
 
-    let pyExec = existsSync(localVenvPy) ? localVenvPy : (existsSync(sharedVenvPy) ? sharedVenvPy : 'python');
-    const jupyterArgs = `-m jupyterlab --ServerApp.token=\\"\\" --ServerApp.password=\\"\\" --ServerApp.disable_check_xsrf=True`;
-
-    spawn('powershell.exe', ['-Command', `Start-Process powershell.exe -ArgumentList '-NoExit', '-Command', 'Set-Location \\"${projectPath}\\"; & \\"${pyExec}\\" ${jupyterArgs}'`], {
+    const psScript = `Set-Location '${projectPath}'; & '${pyExec}' -m jupyterlab`;
+    spawn('powershell.exe', ['-Command', `Start-Process powershell.exe -ArgumentList '-NoExit', '-Command', "${psScript}"`], {
       detached: true,
       stdio: 'ignore',
     }).unref();

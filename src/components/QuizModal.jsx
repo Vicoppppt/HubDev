@@ -95,9 +95,24 @@ export default function QuizModal({ isOpen, onClose, projectName }) {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-white">QCM Interactif Web</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-pink-950/40 text-pink-300 border border-pink-800/40">
-                  {selectedLesson?.lesson || 'Python'}
-                </span>
+                {lessons.length > 1 ? (
+                  <select
+                    value={selectedLesson?.id || ''}
+                    onChange={(e) => {
+                      const l = lessons.find(x => x.id === e.target.value);
+                      if (l) startLesson(l);
+                    }}
+                    className="text-xs px-2.5 py-0.5 rounded-lg font-medium bg-[#131b2e] text-pink-300 border border-pink-500/30 focus:outline-none"
+                  >
+                    {lessons.map(l => (
+                      <option key={l.id} value={l.id}>{l.lesson} ({l.totalQuestions} questions)</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-mono bg-pink-950/40 text-pink-300 border border-pink-800/40">
+                    {selectedLesson?.lesson || 'Python'} ({selectedLesson?.totalQuestions || 0} questions)
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 {selectedLesson?.title || 'Entraînement aux questions du cours'}
